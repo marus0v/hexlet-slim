@@ -37,7 +37,8 @@ $app->get('/', function ($request, $response) {
 });
 
 /* $app->get('/users', function ($request, $response) {
-    return $response->write('GET /users');
+    // return $response->write('GET /users');
+    return $this->get('renderer')->render($response, 'users/new.phtml');
 }); */
 
 /* $app->get('/users', function ($request, $response, array $args)  use ($users) {
@@ -47,7 +48,7 @@ $app->get('/', function ($request, $response) {
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);;
 }); */
 
-$repo = file_get_contents('./src/repo.json');
+$repo = getArrayFromJson('./src/repo.json');
 // var_dump($repo);
 
 $app->post('/users', function ($request, $response) use ($repo) {
@@ -56,7 +57,7 @@ $app->post('/users', function ($request, $response) use ($repo) {
     $errors = $validator->validate($user);
     if (count($errors) === 0) {
         $repo[] = $user;
-        file_put_contents('./src/repo.json', $repo)
+        file_put_contents('./src/repo.json', $repo);
         return $response->withRedirect('/users', 302);
     }
     $params = [
