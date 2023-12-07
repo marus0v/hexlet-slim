@@ -5,8 +5,23 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use DI\Container;
+use App\Validator;
 
-$users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
+function getFileData(string $fileName): string
+{
+    if (!file_exists($fileName)) {
+        return throw new \Exception("File not found: '$fileName'");
+    }
+    return file_get_contents($fileName);
+}
+
+function getArrayFromJson(string $fileName)
+{
+    $file = getFileData($fileName);
+    return $fileArray = json_decode($file, true);
+}
+
+// $users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
 
 $container = new Container();
 $container->set('renderer', function () {
@@ -15,20 +30,6 @@ $container->set('renderer', function () {
 });
 $app = AppFactory::createFromContainer($container);
 
-/* $faker = \Faker\Factory::create();
-$faker->seed(1234);
-
-$domains = [];
-for ($i = 0; $i < 10; $i++) {
-    $domains[] = $faker->domainName;
-}
-
-$phones = [];
-for ($i = 0; $i < 10; $i++) {
-    $phones[] = $faker->phoneNumber;
-} */
-
-// $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
 
 $app->get('/', function ($request, $response) {
@@ -39,20 +40,39 @@ $app->get('/', function ($request, $response) {
     return $response->write('GET /users');
 }); */
 
-$app->get('/users', function ($request, $response, array $args)  use ($users) {
+/* $app->get('/users', function ($request, $response, array $args)  use ($users) {
     $term = $request->getQueryParam('term');
-    foreach ($users as $user) {
-        if (str_contains($user, $term)) {
-            $sortedUsers[] = $user;
-        }
-    }
-    // $sortedUsers = array_filter($users, fn($user) => str_contains($user, $term) )
+    $sortedUsers = array_filter($users, fn($user) => str_contains($user, $term));
     $params = ['users' => $sortedUsers, 'term' => $term];
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);;
+}); */
+
+$repo = file_get_contents('./src/repo.json');
+// var_dump($repo);
+
+$app->post('/users', function ($request, $response) use ($repo) {
+    $validator = new Validator();
+    $user = $request->getParsedBodyParam('user');
+    $errors = $validator->validate($user);
+    if (count($errors) === 0) {
+        $repo[] = $user;
+        file_put_contents('./src/repo.json', $repo)
+        return $response->withRedirect('/users', 302);
+    }
+    $params = [
+        'user' => $user,
+        'errors' => $errors
+    ];
+    return $this->get('renderer')
+                ->render($response->withStatus(422), 'users/new.phtml', $params);
 });
 
-$app->post('/users', function ($request, $response) {
-    return $response->write('POST /users');
+$app->get('/users/new', function ($request, $response) {
+    $params = [
+        'user' => ['name' => '', 'email' => ''],
+        'errors' => []
+    ];
+    return $this->get('renderer')->render($response, "users/new.phtml", $params);
 });
 
 // $app->post('/users', function ($request, $response) {
@@ -64,9 +84,9 @@ $app->get('/courses/{id}', function ($request, $response, array $args) {
     return $response->write("Course id: {$id}");
 });
 
-$app->get('/users/{id}', function ($request, $response, $args) {
+/* $app->get('/users/{id}', function ($request, $response, $args) {
     $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
-});
+}); */
 
 $app->run();
