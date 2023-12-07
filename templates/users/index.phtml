@@ -1,3 +1,4 @@
+<a href="/users/new">Добавить пользователя</a>
 <form action="/users" method="get">
   <input type="search" name="term" value="<?= htmlspecialchars($term) ?>" />
   <input type="submit" value="Найти!" />
@@ -5,6 +6,6 @@
 
 <ul>
   <?php foreach ($users as $user): ?>
-    <li><div><?= $user ?></div></li>
+    <li><div><?= $user['name'] ?></div></li>
   <?php endforeach ?>
 </ul>

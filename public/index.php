@@ -49,15 +49,26 @@ $app->get('/', function ($request, $response) {
 }); */
 
 $repo = getArrayFromJson('./src/repo.json');
+// $user_id = count($repo);
 // var_dump($repo);
+var_dump(count($repo));
+
+$app->get('/users', function ($request, $response) use ($repo, $user_id) {
+    $params = [
+        'users' => $repo
+    ];
+    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
+});
 
 $app->post('/users', function ($request, $response) use ($repo) {
     $validator = new Validator();
+    $user_id = count($repo);
+    $user['id'] = $user_id;
     $user = $request->getParsedBodyParam('user');
     $errors = $validator->validate($user);
     if (count($errors) === 0) {
         $repo[] = $user;
-        file_put_contents('./src/repo.json', $repo);
+        file_put_contents('./src/repo.json', json_encode($repo));
         return $response->withRedirect('/users', 302);
     }
     $params = [
